@@ -1,0 +1,31 @@
+# Arquivo .gitignore para projeto Python com Selenium
+
+# Arquivos de ambiente
+.env
+.env.*
+
+# Arquivos do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenv
+venv/
+ENV/
+
+# Arquivos do IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos do ChromeDriver
+chromedriver.log
+chromedriver.exe
+
+# Pasta de perfil do Instagram
+insta_profile/
