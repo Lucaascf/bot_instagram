@@ -30,4 +30,4 @@ chromedriver.exe
 # Pasta de perfil do Instagram
 insta_profile/
 
-.txt*
+*.txt

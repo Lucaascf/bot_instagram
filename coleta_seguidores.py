@@ -14,7 +14,7 @@ from datetime import datetime
 # Configurações
 EMAIL = os.getenv("INSTA_EMAIL")
 SENHA = os.getenv("INSTA_PASSWORD")
-USERNAME_ALVO = "_imcryansp._"
+LISTA_USUARIOS = ["_imcryansp._"]
 MAX_SEGUIDORES = 10000  # Ilimitado
 MAX_SCROLLS = 500
 
@@ -194,31 +194,31 @@ def coletar_seguidores_rapido():
     
     return seguidores
 
-def salvar_rapido(seguidores, username_alvo):
-    """Salvamento otimizado"""
+def salvar_rapido(todos_seguidores, lista_usuarios):
+    """Salvamento otimizado para múltiplos perfis"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # JSON compacto
-    nome_json = f"seguidores_{username_alvo}_{timestamp}.json"
+    nome_json = f"seguidores_multiplos_{timestamp}.json"
     with open(nome_json, 'w', encoding='utf-8') as f:
         json.dump({
-            'perfil_alvo': username_alvo,
+            'perfis_alvo': lista_usuarios,
             'data_coleta': datetime.now().isoformat(),
-            'total_seguidores': len(seguidores),
-            'seguidores': seguidores
+            'total_seguidores_unicos': len(todos_seguidores),
+            'seguidores': list(todos_seguidores.values())
         }, f, ensure_ascii=False, indent=2)
     
     # TXT apenas usernames
-    nome_txt = f"usernames_{username_alvo}_{timestamp}.txt"
+    nome_txt = f"usernames_multiplos_{timestamp}.txt"
     with open(nome_txt, 'w', encoding='utf-8') as f:
-        f.write(f"SEGUIDORES DE @{username_alvo}\n")
-        f.write(f"Total: {len(seguidores)}\n")
+        f.write(f"SEGUIDORES DE: {', '.join(['@' + u for u in lista_usuarios])}\n")
+        f.write(f"Total únicos: {len(todos_seguidores)}\n")
         f.write("="*40 + "\n\n")
-        for seguidor in seguidores:
+        for seguidor in todos_seguidores.values():
             f.write(f"@{seguidor['username']}\n")
     
     print(f"💾 Salvos: {nome_json} | {nome_txt}")
-    print(f"🎯 Total: {len(seguidores)} seguidores")
+    print(f"🎯 Total únicos: {len(todos_seguidores)} seguidores")
 
 def executar_coleta_otimizada(username):
     """Execução principal super otimizada"""
@@ -268,20 +268,60 @@ def executar_coleta_otimizada(username):
 
 # EXECUÇÃO PRINCIPAL OTIMIZADA
 try:
-    print("🚀 INSTAGRAM SCRAPER OTIMIZADO")
-    print(f"🎯 Alvo: @{USERNAME_ALVO}")
+    print("🚀 INSTAGRAM SCRAPER OTIMIZADO - MÚLTIPLOS PERFIS")
+    print(f"🎯 Alvos: {LISTA_USUARIOS}")
     print("="*40)
     
     driver.get("https://www.instagram.com/")
     fazer_login()
     remover_popups()
     
-    sucesso = executar_coleta_otimizada(USERNAME_ALVO)
+    # Dicionário para armazenar todos os seguidores únicos
+    todos_seguidores = {}  # {username: dados_completos}
     
-    if sucesso:
-        print("\n🎉 COLETA CONCLUÍDA!")
+    for i, username in enumerate(LISTA_USUARIOS, 1):
+        print(f"\n🔄 [{i}/{len(LISTA_USUARIOS)}] Processando @{username}")
+        print("="*40)
+        
+        sucesso = executar_coleta_otimizada(username)
+        
+        if sucesso:
+            # Lê o arquivo JSON mais recente para pegar os dados
+            arquivos_json = [f for f in os.listdir('.') if f.startswith(f'seguidores_{username}_')]
+            if arquivos_json:
+                arquivo_mais_recente = max(arquivos_json, key=os.path.getctime)
+                with open(arquivo_mais_recente, 'r', encoding='utf-8') as f:
+                    dados = json.load(f)
+                    
+                # Adiciona seguidores únicos ao dicionário principal
+                novos_adicionados = 0
+                for seguidor in dados['seguidores']:
+                    if seguidor['username'] not in todos_seguidores:
+                        todos_seguidores[seguidor['username']] = seguidor
+                        novos_adicionados += 1
+                
+                print(f"✅ @{username}: {len(dados['seguidores'])} seguidores | +{novos_adicionados} novos únicos")
+                
+                # Remove arquivo individual
+                os.remove(arquivo_mais_recente)
+                arquivo_txt = arquivo_mais_recente.replace('seguidores_', 'usernames_').replace('.json', '.txt')
+                if os.path.exists(arquivo_txt):
+                    os.remove(arquivo_txt)
+        else:
+            print(f"❌ Falha ao coletar @{username}")
+        
+        # Pausa entre perfis
+        if i < len(LISTA_USUARIOS):
+            print("⏳ Aguardando 10s antes do próximo...")
+            time.sleep(10)
+    
+    # Salva resultado final
+    if todos_seguidores:
+        print(f"\n🎉 COLETA COMPLETA!")
+        print(f"📊 Seguidores únicos coletados: {len(todos_seguidores)}")
+        salvar_rapido(todos_seguidores, LISTA_USUARIOS)
     else:
-        print("\n❌ FALHA na coleta")
+        print("\n❌ Nenhum seguidor foi coletado")
     
     input("\n⏸️ Enter para fechar...")
 
